@@ -1,0 +1,85 @@
+name: Run Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  unit_test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: install dependencies
+        run: npm install
+      
+      - name: run jest tests
+        run: npm test
+
+  lint_and_build:
+    needs: unit_test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: install
+        run: yarn install
+
+      - name: Prettier
+        run: yarn run format
+      
+      - name: ESLint
+        run: yarn run lint:fix
+      
+      - name: build package
+        run: yarn build
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v4.3.6
+        with:
+          name: "build-artifact"
+          # A file, directory or wildcard pattern that describes what to upload
+          path: ./build
+  
+  deploy:
+    needs: lint_and_build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v4.1.8
+        with:
+          name: build-artifact
+          path: build
+
+      - name: check
+        run: ls -R
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+                
+      - name: S3 Deploy
+        uses: Reggionick/s3-deploy@v4.0.0
+        with:
+          # Directory to deploy
+          folder: ./build
+          # Name of AWS Bucket
+          bucket: sample-web-upload
+          # The destination bucket region
+          bucket-region: ap-southeast-1
+                

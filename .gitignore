@@ -1,0 +1,7 @@
+/terraform/backend/.terraform*
+/terraform/core/.terraform*
+/terraform/ec2/.terraform*
+
+/terraform/backend/terraform.tfstate*
+terraform/core/terraform.tfstate*
+terraform/ec2/terraform.tfstate*
